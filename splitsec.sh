@@ -117,3 +117,6 @@ for share in $shares; do
     echo "$share" > "$SHAREOUT"
     i=$((i+1))
 done
+
+echo "Success!"
+echo "You should now verify your key can be reconstructed and your file can be decrypted."

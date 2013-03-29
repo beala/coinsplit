@@ -26,7 +26,7 @@ function fail {
 
 grep universe /etc/apt/sources.list &> /dev/null
 if [[ $? != 0 ]]; then
-    echo "Add universe to /etc/apt/sources.list"
+    echo "Add 'universe' to /etc/apt/sources.list"
     exit 1
 fi
 
@@ -36,3 +36,4 @@ sudo easy_install xkpa || fail "Couldn't install xkpa."
 
 echo
 echo "Success!"
+echo "You should disconnect from the internet now."
