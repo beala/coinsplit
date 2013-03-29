@@ -20,14 +20,14 @@
 # SOFTWARE.
 
 function fail {
-	echo "Failed: $1"
-	exit 1
+    echo "Failed: $1"
+    exit 1
 }
 
 grep universe /etc/apt/sources.list &> /dev/null
 if [[ $? != 0 ]]; then
-	echo "Add universe to /etc/apt/sources.list"
-	exit 1
+    echo "Add universe to /etc/apt/sources.list"
+    exit 1
 fi
 
 sudo apt-get update || fail "Couldn't apt-get update"

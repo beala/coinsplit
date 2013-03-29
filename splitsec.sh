@@ -34,39 +34,47 @@ the current directory.
 OPTIONS:
     -t      Number of shares needed to recreate the secret.
     -n      Number of shares to generate.
-    -o      Name of files to output shares to.
+    -f      File to encrypt.
+    -o      Output directory.
     -h      Output this message.
 EOF
 }
 
-while getopts "ho:t:n:" OPTION; do
+while getopts "ho:t:n:f:" OPTION; do
     case "$OPTION" in
         h)
             usage
             exit 1
             ;;
+        f)
+            INFILE="$OPTARG"
+            ;;
+        o)
+            OUTDIR="$OPTARG"
+            ;;
         t)
             THRESHOLD="$OPTARG"
             ;;
-	n)
-	    SHARESCOUNT="$OPTARG"
-	    ;;
-	o)
-	    SHARESOUT="$OPTARG"
-	    ;;
+        n)
+            SHARESCOUNT="$OPTARG"
+            ;;
     esac
 done
 
 DIE=false
+if [[ -z "$INFILE" ]]; then
+    echo "Error: Missing input file."
+    DIE=true
+fi
+if [[ -z "$OUTDIR" ]]; then
+    echo "Error: Missing output directory."
+    DIE=true
+fi
 if [[ -z "$THRESHOLD" ]]; then
     echo "Error: Missing shares threshold."
     DIE=true
 fi
 if [[ -z "$SHARESCOUNT" ]]; then
-    echo "Error: Missing shares count."
-    DIE=true
-fi
-if [[ -z "$SHARESOUT" ]]; then
     echo "Error: Missing shares count."
     DIE=true
 fi
@@ -78,6 +86,18 @@ fi
 
 # Generate the secret.
 SECRET="$($SECRETGEN)"
+OUTFILE="$OUTDIR/$(basename "$INFILE")".enc
+
+if [ -e "$OUTFILE" ]; then
+    echo "Error: $OUTFILE already exists."
+    exit 1
+fi
+
+openssl enc -aes-256-cbc -k "$SECRET" -in "$INFILE" -out "$OUTFILE"
+if [[ $? != 0 ]]; then
+    echo "Error: Encryption failed."
+    exit 1
+fi
 
 # Split the secret into shares.
 shares="$(ssss-split -t "$THRESHOLD" -n "$SHARESCOUNT" -q <<< "$SECRET")"
@@ -86,12 +106,14 @@ if [[ $? != 0 ]]; then
     exit 1
 fi
 
-echo "Secret: $SECRET"
-
 # Write each share to a different file.
 i=0
 for share in $shares; do
-    echo $share
-    echo "$share" > "$SHARESOUT-$i"
+    SHAREOUT="$OUTDIR/$(basename "$INFILE")-share-$i"
+    if [ -e "$SHAREOUT" ]; then
+        echo "Error: $SHAREOUT already exists."
+        exit 1
+    fi
+    echo "$share" > "$SHAREOUT"
     i=$((i+1))
 done
